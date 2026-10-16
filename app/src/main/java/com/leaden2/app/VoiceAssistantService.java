@@ -231,19 +231,34 @@ public class VoiceAssistantService extends Service implements TextToSpeech.OnIni
         return ActionType.GENERAL;
     }
 
-    private String extractOutput(String response) throws JSONException {
-        if (response == null || response.trim().isEmpty()) return "";
-        Object parsed = new org.json.JSONTokener(response).nextValue();
-        JSONObject object = null;
-        if (parsed instanceof JSONArray) {
-            JSONArray array = (JSONArray) parsed;
-            if (array.length() > 0) object = array.optJSONObject(0);
-        } else if (parsed instanceof JSONObject) {
-            object = (JSONObject) parsed;
+private String extractOutput(String response) throws JSONException {
+    if (response == null || response.trim().isEmpty()) return "";
+
+    Object parsed = new org.json.JSONTokener(response).nextValue();
+    JSONObject object = null;
+
+    if (parsed instanceof JSONArray) {
+        JSONArray array = (JSONArray) parsed;
+        if (array.length() > 0) {
+            object = array.optJSONObject(0);
         }
-        return object == null ? "" : object.optString("output", "").trim();
+    } else if (parsed instanceof JSONObject) {
+        object = (JSONObject) parsed;
     }
 
+    if (object == null) return "";
+
+    // Acepta el formato actual del webhook y el formato anterior.
+    String output = object.optString("texto", "").trim();
+
+    if (output.isEmpty()) {
+        output = object.optString("output", "").trim();
+    }
+
+    return output;
+}
+
+   
     private String readAll(InputStream input) throws Exception {
         if (input == null) return "";
         try (InputStream in = input; ByteArrayOutputStream out = new ByteArrayOutputStream()) {
